@@ -8,34 +8,41 @@ namespace AbcBank
 {
     public class Bank
     {
-        private readonly List<Customer> customers = new List<Customer>();
+        private List<Customer> customers;
+
         public Bank()
         {
-            
+            customers = new List<Customer>();
         }
-        public void AddCustomer(Customer customer)
-        {
-            if (this.customers.Contains(customer))
-                throw new Exception("Customer already exists");
 
-            this.customers.Add(customer);
-            
-        }
-        public string GetCustomerSummary()
+        public void addCustomer(Customer customer)
         {
-            var summary = new StringBuilder("Customer Summary");
-            foreach (var c in this.customers)
-                summary.AppendFormat("\n {0}",c.GetSummary());
-            
-            return summary.ToString();
+            customers.Add(customer);
         }
-        public IEnumerable<Customer> Customers
+
+        public String customerSummary()
         {
-            get {return this.customers; }
+            String summary = "Customer Summary";
+            foreach (Customer c in customers)
+                summary += "\n - " + c.getName() + " (" + format(c.getNumberOfAccounts(), "account") + ")";
+            return summary;
         }
-        public double GetTotalPaidInterest()
+
+        //Make sure correct plural of word is created based on the number passed in:
+        //If number passed in is 1 just return the word otherwise add an 's' at the end
+        private String format(int number, String word)
         {
-            return this.customers.Sum(a => a.GetEarnedInterest());
+            return number + " " + (number == 1 ? word : word + "s");
         }
+
+        public double totalInterestPaid()
+        {
+            double total = 0;
+            foreach (Customer c in customers)
+                total += c.totalInterestEarned();
+            return total;
+        }
+
+        
     }
 }

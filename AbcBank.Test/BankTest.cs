@@ -4,129 +4,69 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
+
 namespace AbcBank.Test
 {
-    [TestFixture, Description("Tests for Bank class")]
+    [TestFixture]
     public class BankTest
-    {   
-      
+    {
+        private static readonly double DOUBLE_DELTA = 1e-15;
+
         [Test]
-        public void Should_Add_New_Customer()
+        public void customerSummary()
         {
-            var bank = new Bank();
-            var customer  = new Customer("John");
-            bank.AddCustomer(customer);
-            Assert.IsTrue(bank.Customers.Contains(customer));
-        }
-        [Test]
-        [ExpectedException(ExpectedMessage = "Customer already exists")]
-        public void Should_Raise_CustomerAlreadyAddedException()
-        {
-            var bank = new Bank();
-            var customer = new Customer("John");
-            bank.AddCustomer(customer);
-            bank.AddCustomer(customer);
+            Bank bank = new Bank();
+            Customer john = new Customer("John");
+            john.openAccount(AccountFactory.Get(EnumAccountType.CHECKING));
+            bank.addCustomer(john);
+
+            Assert.AreEqual("Customer Summary\n - John (1 account)", bank.customerSummary());
         }
 
         [Test]
-        public void Should_Get_Summary_With_No_Customers()
+        public void checkingAccount()
         {
-            var bank = new Bank();
-            Assert.AreEqual("Customer Summary", bank.GetCustomerSummary());
-        }
-        [Test]
-        public void Should_Get_Summary_For_One_Customer_With_No_Account()
-        {
-            var bank = new Bank();
-            var customer = new Customer("John");
-            bank.AddCustomer(customer);
-            Assert.AreEqual("Customer Summary\n - John (no accounts)", bank.GetCustomerSummary());
+            Bank bank = new Bank();
+            Account checkingAccount = AccountFactory.Get(EnumAccountType.CHECKING);
+            Customer bill = new Customer("Bill").openAccount(checkingAccount);
+            bank.addCustomer(bill);
+
+            checkingAccount.deposit(100.0);
+
+            Assert.AreEqual(0.1, bank.totalInterestPaid(), DOUBLE_DELTA);
         }
 
         [Test]
-        public void Should_Get_Summary_For_One_Customer_With_One_Account()
+        public void savings_account()
         {
-            var bank = new Bank();
-            var customer = new Customer("Bill");
-            bank.AddCustomer(customer);
-            customer.AddAccount(new Account(AccountType.Checking));
-            Assert.AreEqual("Customer Summary\n - Bill (1 account)", bank.GetCustomerSummary());
+            Bank bank = new Bank();
+            Account savingsAccount = AccountFactory.Get(EnumAccountType.SAVINGS);
+            bank.addCustomer(new Customer("Bill").openAccount(savingsAccount));
+
+            savingsAccount.deposit(1500.0);
+
+            Assert.AreEqual(2.0, bank.totalInterestPaid(), DOUBLE_DELTA);
+
+            savingsAccount.withdraw(600);
+
+            Assert.AreEqual(0.9, bank.totalInterestPaid(), DOUBLE_DELTA);
         }
+
         [Test]
-        public void Should_Get_Summary_For_One_Customer_With_Two_Accounts()
+        public void maxi_savings_account()
         {
-            var bank = new Bank();
-            var customer = new Customer("Richard");
-            bank.AddCustomer(customer);
-            customer.AddAccount(new Account(AccountType.Checking));
-            customer.AddAccount(new Account(AccountType.Checking));
-            Assert.AreEqual("Customer Summary\n - Richard (2 accounts)", bank.GetCustomerSummary());
+            Bank bank = new Bank();
+            Account maxiSavingsAccount = AccountFactory.Get(EnumAccountType.MAXI_SAVINGS);
+            bank.addCustomer(new Customer("Bill").openAccount(maxiSavingsAccount));
+
+            maxiSavingsAccount.deposit(3000.0);
+
+            Assert.AreEqual(150.0, bank.totalInterestPaid(), DOUBLE_DELTA);
+
+            maxiSavingsAccount.withdraw(100);
+
+            Assert.AreEqual(2.9, bank.totalInterestPaid(), DOUBLE_DELTA);
         }
-        [Test]
-        public void Should_Get_Summary_For_One_Customer_With_Three_Accounts()
-        {
-            var bank = new Bank();
-            var customer = new Customer("George");
-            bank.AddCustomer(customer);
-            customer.AddAccount(new Account(AccountType.Checking));
-            customer.AddAccount(new Account(AccountType.Savings));
-            customer.AddAccount(new Account(AccountType.MaxiSavings));
-            Assert.AreEqual("Customer Summary\n - George (3 accounts)", bank.GetCustomerSummary());
-        }
-        [Test]
-        public void Should_Get_Summary_For_Two_Customers_With_No_Accounts()
-        {
-            var bank = new Bank();
-            bank.AddCustomer(new Customer("Maria"));
-            bank.AddCustomer(new Customer("Ellen"));
-            Assert.AreEqual("Customer Summary\n - Maria (no accounts)\n - Ellen (no accounts)", bank.GetCustomerSummary());
-        }
-        [Test]
-        [Ignore]
-        public void Should_GetTotalPaidInterest()
-        {
-            var bank = new Bank();
-            var maria = new Customer("Maria");
-            var mariaChecking = new Account
-           (
-               AccountType.Checking,
-               new Transaction[]
-                {
-                    new Transaction(DateTime.Today.AddDays(-200), 100000), 
-                    new Transaction(DateTime.Today.AddDays(-190), 10000), 
-                    new Transaction(DateTime.Today.AddDays(-150), -5000), 
-                    new Transaction(DateTime.Today.AddDays(-100), 1000)
-                }
-          );
 
-            maria.AddAccount(mariaChecking);
-
-            var mariaSavings = new Account
-          (
-              AccountType.Savings,
-              new Transaction[]
-                {
-                    new Transaction(DateTime.Today.AddDays(-200), 15000)
-                }
-         );
-
-            maria.AddAccount(mariaSavings);
-            bank.AddCustomer(maria);
-
-            var ellen = new Customer("Ellen");
-            ellen.AddAccount(new Account
-          (
-              AccountType.MaxiSavings,
-              new Transaction[]
-                {
-                    new Transaction(DateTime.Today.AddDays(-20), 15000)
-                }
-         ));
-            bank.AddCustomer(ellen);
-
-
-            var paid = bank.GetTotalPaidInterest();
-            Assert.Fail("Should figure out the expected amount");
-        }
     }
 }

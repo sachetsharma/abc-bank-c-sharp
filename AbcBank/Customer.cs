@@ -8,67 +8,75 @@ namespace AbcBank
 {
     public class Customer
     {
-        public const string INVALID_SOURCE_ACCOUNT = "Source account is not owned by customer";
-        public const string INVALID_TARGET_ACCOUNT = "Target account is not owned by customer";
-        public const string INVALID_TRANSFER_AMOUNT = "Transfer amount must be greater than zero";
-        private readonly List<Account> accounts = new List<Account>();
-        public Customer(string name)
+        private String name;
+        private List<Account> accounts;
+
+        public Customer(String name)
         {
-            Name = name;
+            this.name = name;
+            this.accounts = new List<Account>();
         }
-        public string Name{get; private set;}
-        public double GetEarnedInterest()
+
+        public String getName()
         {
-            return this.accounts.Sum(a => a.GetEarnedInterest());
+            return name;
         }
-        public string GetStatement()
+
+        public Customer openAccount(Account account)
         {
-            var statement = new StringBuilder("Statement for " + Name);
+            accounts.Add(account);
+            return this;
+        }
+
+        public int getNumberOfAccounts()
+        {
+            return accounts.Count;
+        }
+
+        public double totalInterestEarned()
+        {
+            double total = 0;
+            foreach (Account a in accounts)
+                total += a.interestEarned();
+            return total;
+        }
+
+        /*******************************
+         * This method gets a statement
+         *********************************/
+        public String getStatement()
+        {
+            //JIRA-123 Change by Joe Bloggs 29/7/1988 start
+            String statement = null; //reset statement to null here
+            //JIRA-123 Change by Joe Bloggs 29/7/1988 end
+            statement = "Statement for " + name + "\n";
             double total = 0.0;
-            foreach (var account in accounts)
+            foreach (Account a in accounts)
             {
-                statement.Append("\n" + account.GetStatement() + "\n");
-                total += account.GetSumOfTransactions();
+                statement += "\n" + a.getStatement() + "\n";
+                total += a.sumTransactions();
             }
-            statement.Append("\nTotal In All Accounts " + Utility.ToDollars(total));
-            return statement.ToString();
+            statement += "\nTotal In All Accounts " + toDollars(total);
+            return statement;
         }
-        public string GetSummary()
+
+        private String toDollars(double d)
         {
-            switch (this.accounts.Count)
+            return String.Format("${0:N2}", Math.Abs(d));
+        }
+
+        public bool transfer(Account fromAccount, Account toAccount, double transferAmount)
+        {
+            double totalAccountValue = fromAccount.sumTransactions();
+            if (totalAccountValue < transferAmount)
             {
-                case 0:
-                    return string.Format("- {0} (no accounts)", Name);
-                case 1:
-                    return string.Format("- {0} (1 account)", Name);
-                default:
-                    return string.Format("- {0} ({1} accounts)", Name, this.accounts.Count);
+                throw new Exception("Insufficient funds.");
             }
-        }
-        public IEnumerable<Account> Accounts
-        {
-            get { return this.accounts; }
-        }
-        public void AddAccount(Account account)
-        {
-            this.accounts.Add(account);
-        }
-        
-        public void Transfer(Account from, Account to, double amount)
-        {
 
-            if (!this.accounts.Contains(from))
-                throw new Exception(INVALID_SOURCE_ACCOUNT);
+            fromAccount.withdraw(transferAmount);
+            toAccount.deposit(transferAmount);
 
-            if (!this.accounts.Contains(to))
-                throw new Exception(INVALID_TARGET_ACCOUNT);
-
-            if (amount <= 0d)
-                throw new Exception(INVALID_TRANSFER_AMOUNT);
-
-
-            from.Withdraw(amount);
-            to.Deposit(amount);
+            return true;
         }
     }
 }
